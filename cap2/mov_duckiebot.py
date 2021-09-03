@@ -60,10 +60,21 @@ while True:
     # Definir acción en base a la tecla apretada
 
     # Esto es avanzar recto hacia adelante al apretar la tecla w
+    #para moverse para arriba:
     if key == ord('w'):
-        action = np.array([0.44, 0.0])
-
-    ### AGREGAR MÁS COMPORTAMIENTOS ###
+        action = np.array([0.1, 0.0])
+        
+    #para moverse para la izquierda:
+    if key == ord('s'):
+        action = np.array([-0.1, 0.0])
+        
+    #para moverse para la derecha:
+    if key == ord('d'):
+        action = np.array([0.0, 0.1])
+        
+    #para moverse para abajo:
+    if key == ord('a'):
+        action = np.array([0.0, -0.1])
 
 
 
