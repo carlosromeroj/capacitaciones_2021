@@ -27,12 +27,15 @@ def mov_duckiebot(key):
     return actions.get(key, np.array([0.0, 0.0]))
 
 
+
+
+
 if __name__ == '__main__':
 
     # Se leen los argumentos de entrada
     parser = argparse.ArgumentParser()
     parser.add_argument('--env-name', default="Duckietown-udem1-v1")
-    parser.add_argument('--map-name', default='udem1')
+    parser.add_argument('--map-name', default='loop_pedestrians')
     parser.add_argument('--distortion', default=False, action='store_true')
     parser.add_argument('--draw-curve', action='store_true', help='draw the lane following curve')
     parser.add_argument('--draw-bbox', action='store_true', help='draw collision detection bounding boxes')
@@ -64,25 +67,32 @@ if __name__ == '__main__':
     upper_yellow = np.array([45,255,255])
     min_area = 2500
 
+    
+    C = 320
+
+    def seguir_centro(error):
+        k = 0.01
+        return np.array([0.0, k*error])
+        
+
+
+    obs, reward, done, info = env.step(np.array([0.0, 0.0]))
+
+    seguir = False
     while True:
 
         # Captura la tecla que está siendo apretada y almacena su valor en key
-        key = cv2.waitKey(30)
-        # Si la tecla es Esc, se sale del loop y termina el programa
-        if key == 27:
-            break
-
-        action = mov_duckiebot(key)
-        # Se ejecuta la acción definida anteriormente y se retorna la observación (obs),
-        # la evaluación (reward), etc
-        obs, reward, done, info = env.step(action)
+        
         # obs consiste en un imagen RGB de 640 x 480 x 3
+
 
         # done significa que el Duckiebot chocó con un objeto o se salió del camino
         if done:
             print('done!')
-            # En ese caso se reinicia el simulador
+        # En ese caso se reinicia el simulador
             env.reset()
+
+        
 
         ### CÓDIGO DE DETECCIÓN POR COLOR ##############################################################
 
@@ -120,15 +130,41 @@ if __name__ == '__main__':
             # Obtener rectangulo que bordea un contorno
             x, y, w, h = cv2.boundingRect(cnt)
             #Filtrar por area minima
+
             if w*h > min_area: # DEFINIR AREA
                 #Dibujar rectangulo en el frame original
                 cv2.rectangle(obs, (x, y), (x+w, y+h), (0,255,0), 3)
+                cv2.circle(obs, (int(x+w/2), int(y+h/2)),1,(0,255,0), 3 )
+                cv2.line(obs,(320,240), (int(x+w/2), int(y+h/2)) ,(0,255,0), 3  )
+                error = C - (x+w/2)
+                
 
         # Se muestra en una ventana llamada "patos" la observación del simulador
         # con los bounding boxes dibujados
         cv2.imshow('patos', cv2.cvtColor(obs, cv2.COLOR_RGB2BGR))
         # Se muestra en una ventana llamada "filtrado" la imagen filtrada
         cv2.imshow('filtrado',cv2.cvtColor(mask_dilate,cv2.COLOR_RGB2BGR))
+
+        key = cv2.waitKey(30)
+        # Si la tecla es Esc, se sale del loop y termina el programa
+        if key == 27:
+            break
+        
+        if key == ord("o"):
+            seguir = not seguir
+
+        if seguir:
+            action = seguir_centro(error)
+
+        else:
+            action = mov_duckiebot(key)
+        # Se ejecuta la acción definida anteriormente y se retorna la observación (obs),
+        # la evaluación (reward), etc
+        obs, reward, done, info = env.step(action)
+
+
+        
+        
 
 
     # Se cierra el environment y termina el programa
